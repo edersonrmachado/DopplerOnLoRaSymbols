@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-from scipy.fftpack import fft, ifft
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.lines import Line2D
+from scipy.fftpack import fft
 import pandas as pd
 
 PRINT_TO_FILE = False               # save the graph to pdf file
@@ -56,13 +53,13 @@ def calculate_estimate_doppler(SF, s, p, Ts, ti, H, f0):
 
     return fft_abs, estimated_symbol, fft_abs[estimated_symbol]
 
-def calculate_doppler_graph(SF, B, Ts, line, column, graph,H,f0):
+def calculate_doppler_graph(SF, B, Ts, line, column, graph):
+    H = 550000                  # altitude in meters
+    f0 = 436900000              # frequency of the carrier
     number_symbols = 300        # maximum number of symbols to be estimated
     N = 2 ** SF                 # amont of samples
-    fs = B                      # sampling rate
     Ts = 1 / B                  # sampling period
     n = np.arange(0,N)          # generates the samples
-    Rs = B / N                  # frequency resolution
     s = 512                     # choose the symbol to be estimated
     am = 10                     # define the interval of bins that will appear in the graph N/2 - 10 to N/2 + 10
 
@@ -78,7 +75,6 @@ def calculate_doppler_graph(SF, B, Ts, line, column, graph,H,f0):
     previous_estimated_symbol = 0       # use to keep track of the last estimated symbol
     p_values = []                       # list of p values for the y-axis
     p_wrong = []                        # list of p values where the estimated symbol is wrong
-    last_estimated = 0                  # detect when the value varies
 
     ax = fig.add_subplot(line, column, graph, projection='3d')
     ax.view_init(azim = -45, elev = 32)
@@ -200,14 +196,15 @@ if __name__ == "__main__":
     tg = np.arange(-300, 300.01, 0.001)     # calculate the time vector with a resolution of 0.001
 
     deltaFppm = calculate_deltaF(H,tg)
+    
     deltaF_ppm_sec = np.gradient(deltaFppm) / np.gradient(tg)
 
     line = 1        # number line of the subplot
     column = 3      # number column of the subplot
                                                  
-    calculate_doppler_graph(10, B, Ts, line, column, 1,H,f0)
-    calculate_doppler_graph(11, B, Ts, line, column, 2,H,f0)
-    calculate_doppler_graph(12, B, Ts, line, column, 3,H,f0)
+    calculate_doppler_graph(10, B, Ts, line, column, 1)
+    calculate_doppler_graph(11, B, Ts, line, column, 2)
+    calculate_doppler_graph(12, B, Ts, line, column, 3)
 
     if PRINT_TO_FILE:
         plt.savefig(image_folder + figure_1, bbox_inches = 'tight') # bbox_inches='tight' # prevents cuts

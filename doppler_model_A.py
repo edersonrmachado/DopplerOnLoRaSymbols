@@ -1,22 +1,25 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.fftpack import fft
+import os
+from scipy.fftpack import fft, ifft
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.lines import Line2D
 import pandas as pd
 
 PRINT_TO_FILE = False               # save the graph to pdf file
 GENERATE_CSV = False                # generate a csv file for putting in the 2D graph
-STOP_IN_THE_FIRST_SYMBOL = True     # when have an error
+STOP_IN_THE_FIRST_SYMBOL = True     # stop the simulation when the first symbol error occurs    
 
 if PRINT_TO_FILE or GENERATE_CSV:
-    image_folder = r"C:\Users\nwkau\Downloads\teste"
-    figure_1 = "Doppler3DMA.pdf"
-    archive_csv = image_folder + 'values.csv'
-    archive_csv2 = image_folder +'model_droppler_values.csv'
+    image_folder = r"C:\Users\nwkau\Downloads\teste" # specify your path here
+    figure_1 = "Doppler3DMA.pdf" # name of the figure to be saved
+    archive_csv = image_folder + 'values.csv' # name of the csv file to be saved
+    archive_csv2 = image_folder +'model_droppler_values.csv' # name of the csv file to be saved
         
-plt.rcParams['mathtext.fontset'] = 'stix'
-plt.rcParams['font.family'] = 'STIXGeneral'
+plt.rcParams['mathtext.fontset'] = 'stix' # use LaTeX fonts in the plots
+plt.rcParams['font.family'] = 'STIXGeneral' #aaa
 
-def d_rate(time, vector_search, f0, t_generator):
+def d_rate(time, vector_search, f0, t_generator): # return 
     index_time = np.abs(t_generator - time).argmin()
     return vector_search[index_time] * f0
     
@@ -53,13 +56,13 @@ def calculate_estimate_doppler(SF, s, p, Ts, ti, H, f0):
 
     return fft_abs, estimated_symbol, fft_abs[estimated_symbol]
 
-def calculate_doppler_graph(SF, B, Ts, line, column, graph):
-    H = 550000                  # altitude in meters
-    f0 = 436900000              # frequency of the carrier
+def calculate_doppler_graph(SF, B, Ts, line, column, graph,H,f0):
     number_symbols = 300        # maximum number of symbols to be estimated
     N = 2 ** SF                 # amont of samples
+    fs = B                      # sampling rate
     Ts = 1 / B                  # sampling period
     n = np.arange(0,N)          # generates the samples
+    Rs = B / N                  # frequency resolution
     s = 512                     # choose the symbol to be estimated
     am = 10                     # define the interval of bins that will appear in the graph N/2 - 10 to N/2 + 10
 
@@ -75,6 +78,7 @@ def calculate_doppler_graph(SF, B, Ts, line, column, graph):
     previous_estimated_symbol = 0       # use to keep track of the last estimated symbol
     p_values = []                       # list of p values for the y-axis
     p_wrong = []                        # list of p values where the estimated symbol is wrong
+    last_estimated = 0                  # detect when the value varies
 
     ax = fig.add_subplot(line, column, graph, projection='3d')
     ax.view_init(azim = -45, elev = 32)
@@ -196,15 +200,14 @@ if __name__ == "__main__":
     tg = np.arange(-300, 300.01, 0.001)     # calculate the time vector with a resolution of 0.001
 
     deltaFppm = calculate_deltaF(H,tg)
-    
     deltaF_ppm_sec = np.gradient(deltaFppm) / np.gradient(tg)
 
     line = 1        # number line of the subplot
     column = 3      # number column of the subplot
                                                  
-    calculate_doppler_graph(10, B, Ts, line, column, 1)
-    calculate_doppler_graph(11, B, Ts, line, column, 2)
-    calculate_doppler_graph(12, B, Ts, line, column, 3)
+    calculate_doppler_graph(10, B, Ts, line, column, 1,H,f0)
+    calculate_doppler_graph(11, B, Ts, line, column, 2,H,f0)
+    calculate_doppler_graph(12, B, Ts, line, column, 3,H,f0)
 
     if PRINT_TO_FILE:
         plt.savefig(image_folder + figure_1, bbox_inches = 'tight') # bbox_inches='tight' # prevents cuts
@@ -213,4 +216,4 @@ if __name__ == "__main__":
         df.to_csv(archive_csv, header=True, index=False)
         df2 = pd.DataFrame({'SF': sample_values_sf,'valoresDoppler': peak_values_fft})
         df2.to_csv(archive_csv2, header=True, index=False)
-    plt.show()
+    plt.show() # show the graph
